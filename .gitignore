@@ -1,0 +1,6 @@
+.vscode
+.DS_Store
+
+/mysql5.7/mysql
+/mysql5.7/mysqlvolume/*
+!/mysql5.7/mysqlvolume/.gitkeep
