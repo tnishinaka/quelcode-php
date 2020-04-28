@@ -21,7 +21,7 @@ services:
     volumes:
       - ./html:/var/www/html
     ports:
-      - 80:80
+      - 10080:80
     links:
       - mysql:mysql
   phpmyadmin:
@@ -32,7 +32,7 @@ services:
       - PMA_USER=root
       - PMA_PASSWORD=root
     ports:
-      - 10080:80
+      - 10081:80
     volumes:
       - ./phpmyadmin/sessions:/sessions
     links:
