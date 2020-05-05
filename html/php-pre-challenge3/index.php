@@ -21,18 +21,18 @@ foreach($data as $key=>$value) {
 }
 
 //全組み合わせ取得
-function kumiawase($zentai,$kiritori){
-    $zentaisu = count($zentai);
-    if($kiritori == 1){
-        for($i = 0; $i < $zentaisu; $i++){
-        $arrs[$i] = array($zentai[$i]);
+function combination($total,$part){
+    $totalNum = count($total);
+    if($part == 1){
+        for($i = 0; $i < $totalNum; $i++){
+        $arrs[$i] = array($total[$i]);
         }
-    } elseif ($kiritori > 1){
+    } elseif ($part > 1){
         $j=0;
-        for($i=0; $i < $zentaisu-$kiritori+1; $i++){
-        $ts=kumiawase(array_slice($zentai,$i+1),$kiritori-1);
+        for($i=0; $i < $totalNum-$part+1; $i++){
+        $ts=combination(array_slice($total,$i+1),$part-1);
             foreach($ts as $t){
-                array_unshift($t,$zentai[$i]);
+                array_unshift($t,$total[$i]);
                 $arrs[$j] = $t;
                 $j++;
             }
@@ -43,10 +43,10 @@ function kumiawase($zentai,$kiritori){
 
 //答えを求め最終の変数に格納   
 for ($i=1; $i < count($num); $i++) { 
-    $kuraberu = kumiawase($num,$i);
-    for ($j=0; $j < count($kuraberu); $j++) { 
-        if($limit == array_sum($kuraberu[$j])) {
-            $ans[] = $kuraberu[$j];
+    $compare = combination($num,$i);
+    for ($j=0; $j < count($compare); $j++) { 
+        if($limit == array_sum($compare[$j])) {
+            $ans[] = $compare[$j];
         }
     }
 }
