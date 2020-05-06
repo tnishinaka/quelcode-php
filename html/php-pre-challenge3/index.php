@@ -55,4 +55,4 @@ for ($i=1; $i < count($num); $i++) {
 if(is_null($ans)) {
     $ans = [[]];
 }
-echo json_encode($ans);
+echo json_encode($ans,JSON_NUMERIC_CHECK);
