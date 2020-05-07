@@ -49,8 +49,8 @@ function combination($total,$part){
 }
 
 //答えを求め最終の変数に格納   
-for ($i=1; $i < count($nums); $i++) { 
-    $compare = combination($nums,$i);
+for ($i=0; $i < count($nums); $i++) { 
+    $compare = combination($nums,$i+1);
     for ($j=0; $j < count($compare); $j++) { 
         if($limit === array_sum($compare[$j])) {
             $ans[] = $compare[$j];
