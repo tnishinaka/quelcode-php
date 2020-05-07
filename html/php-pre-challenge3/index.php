@@ -3,7 +3,7 @@ $limit = $_GET['target'];
 $limit = mb_convert_kana($limit, 'a' , 'UTF-8');
 if(!is_numeric($limit) || $limit <= 0 || preg_match('/^([1-9]\d*|0)\.(\d+)?$/', $limit)) {
     http_response_code(400);
-    echo json_encode('invalid limit : ' . $limit) . '<br>' . '1以上の整数を入力してください。';
+    echo json_encode('invalid limit :' . $limit);
     exit();
 }
 $limit = intval($limit);
