@@ -3,21 +3,28 @@ $limit = $_GET['target'];
 $limit = mb_convert_kana($limit, 'a' , 'UTF-8');
 if(!is_numeric($limit) || $limit <= 0 || preg_match('/^([1-9]\d*|0)\.(\d+)?$/', $limit)) {
     http_response_code(400);
+    echo json_encode('invalid limit : ' . $limit) . '<br>' . '1以上の整数を入力してください。';
+    exit();
 }
+$limit = intval($limit);
+
 $dsn = 'mysql:dbname=test;host=mysql';
 $dbuser = 'test';
 $dbpassword = 'test';
 try {
     $db = new PDO($dsn,$dbuser,$dbpassword);
 } catch (PDOException $e) {
-    echo 'DB接続エラー' . $e->getMessage();
+    http_response_code(500);
+    echo json_encode('DB接続エラー' . $e->getMessage());
+    exit();
 }
 
 // DBの値を配列に格納
-$records = $db->query('select value from prechallenge3');
-$data = $records->fetchAll();
-foreach($data as $key=>$value) {
-    $num[] = $value[0];
+$records = $db->prepare('select value from prechallenge3 where value <= ?  order by value');
+$records->bindParam(1,$limit,PDO::PARAM_INT);
+$records->execute();
+foreach($records as $loop){
+    $nums[] = intval($loop['value']);
 }
 
 //全組み合わせ取得
@@ -42,10 +49,10 @@ function combination($total,$part){
 }
 
 //答えを求め最終の変数に格納   
-for ($i=1; $i < count($num); $i++) { 
-    $compare = combination($num,$i);
+for ($i=1; $i < count($nums); $i++) { 
+    $compare = combination($nums,$i);
     for ($j=0; $j < count($compare); $j++) { 
-        if($limit == array_sum($compare[$j])) {
+        if($limit === array_sum($compare[$j])) {
             $ans[] = $compare[$j];
         }
     }
