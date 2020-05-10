@@ -14,20 +14,6 @@ if (isset($_SESSION['id']) && $_SESSION['time'] + 3600 > time()) {
 	header('Location: login.php'); exit();
 }
 
-// 投稿を記録する
-if (!empty($_POST)) {
-	if ($_POST['message'] != '') {
-		$message = $db->prepare('INSERT INTO posts SET member_id=?, message=?, reply_post_id=?, created=NOW()');
-		$message->execute(array(
-			$member['id'],
-			$_POST['message'],
-			$_POST['reply_post_id']
-		));
-
-		header('Location: index.php'); exit();
-	}
-}
-
 // 投稿を取得する
 $page = $_REQUEST['page'];
 if ($page == '') {
@@ -44,8 +30,10 @@ $page = min($page, $maxPage);
 $start = ($page - 1) * 5;
 $start = max(0, $start);
 
-$posts = $db->prepare('SELECT m.name, m.picture, p.* FROM members m, posts p WHERE m.id=p.member_id ORDER BY p.created DESC LIMIT ?, 5');
-$posts->bindParam(1, $start, PDO::PARAM_INT);
+$posts = $db->prepare('SELECT m.name, m.picture, p.* , po.post_id,po.uniqueness_id,po.favorite,po.retweet  ,poc.fc,poc.rt FROM members m INNER JOIN posts p on m.id=p.member_id LEFT JOIN (SELECT * FROM posts_option WHERE member_id=?) po ON p.uniqueness_id = po.uniqueness_id 
+LEFT JOIN (SELECT SUM(favorite) fc , SUM(retweet) rt,uniqueness_id FROM posts_option GROUP by uniqueness_id) poc ON po.uniqueness_id = poc.uniqueness_id   ORDER BY p.created DESC LIMIT ?, 5');
+$posts->bindParam(1,$_SESSION['id'] , PDO::PARAM_INT);
+$posts->bindParam(2, $start, PDO::PARAM_INT);
 $posts->execute();
 
 // 返信の場合
@@ -55,6 +43,47 @@ if (isset($_REQUEST['res'])) {
 
 	$table = $response->fetch();
 	$message = '@' . $table['name'] . ' ' . $table['message'];
+}
+
+// 新規投稿
+if (!empty($_POST)) {
+	if ($_POST['message'] != '') {
+		$message = $db->prepare('INSERT INTO posts SET member_id=?, message=?, reply_post_id=?, created=NOW()');
+		$message->execute(array(
+			$member['id'],
+			$_POST['message'],
+			$_POST['reply_post_id']
+		
+		));
+
+		//最新のposts_id取得
+		$sql='SELECT LAST_INSERT_ID()';
+		$stmt=$db->prepare($sql);
+		$stmt->execute();
+		$rec=$stmt->fetch(PDO::FETCH_ASSOC);
+		$max=intval($rec['LAST_INSERT_ID()']);
+
+		// 最新の投稿に一意性のあるidを振り分け
+		$uniq = $db->prepare('UPDATE posts SET uniqueness_id=? where id=?');
+		$uniq->bindParam(1,$max,PDO::PARAM_INT);
+		$uniq->bindParam(2,$max,PDO::PARAM_INT);
+		$uniq->execute();
+
+		//fav retweet 管理専用のテーブルに会員idごとに格納
+		$option = $db->query('SELECT id FROM members');
+		while($row = $option->fetch()) {
+		$nums[] = intval($row['id']);
+		}
+
+		for ($i=0; $i < count($nums); $i++) { 
+		$postOption = $db->prepare('INSERT INTO posts_option SET member_id=?, post_id=?, uniqueness_id=?, created=NOW()');
+			$postOption->execute(array(
+				$nums[$i]
+				,$max,$max
+			));
+		}
+		header('Location: index.php'); exit();
+	}
 }
 
 // htmlspecialcharsのショートカット
@@ -74,7 +103,7 @@ function makeLink($value) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>ひとこと掲示板</title>
-
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css">
 	<link rel="stylesheet" href="style.css" />
 </head>
 
@@ -106,7 +135,60 @@ foreach ($posts as $post):
     <div class="msg">
     <img src="member_picture/<?php echo h($post['picture']); ?>" width="48" height="48" alt="<?php echo h($post['name']); ?>" />
     <p><?php echo makeLink(h($post['message'])); ?><span class="name">（<?php echo h($post['name']); ?>）</span>[<a href="index.php?res=<?php echo h($post['id']); ?>">Re</a>]</p>
-    <p class="day"><a href="view.php?id=<?php echo h($post['id']); ?>"><?php echo h($post['created']); ?></a>
+	<p class="day"><a href="view.php?id=<?php echo h($post['id']); ?>"><?php echo h($post['created']); ?></a>
+
+	<!-- お気に入り機能 -->
+	<!-- お気に入り済み -->
+	<?php if($post['favorite'] == 1) :?>
+	<a href="favorite.php?id=<?php echo h($post['id']); ?>
+	<?php echo '&uniqueness_id=' ?>
+	<?php echo h($post['uniqueness_id']); ?>
+	<?php echo '&page=' ?>
+	<?php echo $page; ?>
+	<?php echo '&favorite=' ?>
+	<?php echo h($post['favorite']); ?>
+	"><i class="fas fa-heart" style="color:red;"></i></a>
+	<?php else: ?> 
+	<!-- お気に入りされていない場合 -->
+	<a href="favorite.php?id=<?php echo h($post['id']); ?>
+	<?php echo '&uniqueness_id=' ?>
+	<?php echo h($post['uniqueness_id']); ?>
+	<?php echo '&favorite=' ?>
+	<?php echo h($post['favorite']); ?>
+	<?php echo '&page=' ?>
+	<?php echo $page; ?>
+	"><i class="fas fa-heart"></i></a>
+	<?php endif ?>
+	<!-- お気に入り回数 -->
+	<?php echo h($post['fc']); ?>
+
+	<!-- リツイート機能 -->
+	<!-- リツイート済み -->
+	<?php if($post['retweet'] == 1) :?>
+	<a href="retweet.php?id=<?php echo h($post['id']); ?>
+	<?php echo '&uniqueness_id=' ?>
+	<?php echo h($post['uniqueness_id']); ?>
+	<?php echo '&retweet=' ?>
+	<?php echo h($post['retweet']); ?>
+	<?php echo '&page=' ?>
+	<?php echo $page; ?>
+	"><i class="fas fa-retweet" style="color:blue;"></i></a>
+	<?php else: ?>
+	<!-- 初リツイート -->
+	<a href="retweet.php?id=<?php echo h($post['id']); ?>
+	<?php echo '&uniqueness_id=' ?>
+	<?php echo h($post['uniqueness_id']); ?>
+	<?php echo '&retweet=' ?>
+	<?php echo h($post['retweet']); ?>
+	<?php echo '&message=' ?>
+	<?php echo h($post['message']); ?>
+	<?php echo '&page=' ?>
+	<?php echo $page; ?>
+	"><i class="fas fa-retweet"></i></a>
+	<?php endif ?>
+	<!-- リツイート回数 -->
+	<?php echo h($post['rt']); ?>
+
 		<?php
 if ($post['reply_post_id'] > 0):
 ?>
@@ -119,7 +201,13 @@ endif;
 <?php
 if ($_SESSION['id'] == $post['member_id']):
 ?>
-[<a href="delete.php?id=<?php echo h($post['id']); ?>"
+[<a href="delete.php?id=<?php echo h($post['id']); ?>
+<?php echo '&uniqueness_id=' ?>
+<?php echo h($post['uniqueness_id']); ?>
+<?php echo '&retweet=' ?>
+<?php echo h($post['retweet']); ?>
+<?php echo '&favorite=' ?>
+<?php echo h($post['favorite']); ?>"
 style="color: #F33;">削除</a>]
 <?php
 endif;
