@@ -3,7 +3,7 @@ session_start();
 require('dbconnect.php');
 
 //fav追加
-if (isset($_SESSION['id']) && $_REQUEST['favorite'] == 0) {
+if (isset($_SESSION['id']) && intval($_REQUEST['favorite']) === 0) {
     $member_id = $_SESSION['id'];
     $post_id = $_REQUEST['id'];
     $uniqueness_id = $_REQUEST['uniqueness_id'];
@@ -16,7 +16,7 @@ if (isset($_SESSION['id']) && $_REQUEST['favorite'] == 0) {
 }
 
 //fav取り消し
-if (isset($_SESSION['id']) && $_REQUEST['favorite'] == 1) {
+if (isset($_SESSION['id']) && intval($_REQUEST['favorite']) === 1) {
     $member_id = $_SESSION['id'];
     $post_id = $_REQUEST['id'];
     $uniqueness_id = $_REQUEST['uniqueness_id'];

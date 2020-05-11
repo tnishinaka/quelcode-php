@@ -3,7 +3,7 @@ session_start();
 require('dbconnect.php');
 
 //retweetする
-if (isset($_SESSION['id']) && $_REQUEST['retweet'] == 0) {
+if (isset($_SESSION['id']) && intval($_REQUEST['retweet']) === 0) {
     $member_id = $_SESSION['id'];
     $uniqueness_id = $_REQUEST['uniqueness_id'];
     $messages =  $_REQUEST['message'];
@@ -26,14 +26,14 @@ if (isset($_SESSION['id']) && $_REQUEST['retweet'] == 0) {
 
     // retweet数１に変更
     $retweet_add = $db->prepare('UPDATE posts_option SET retweet=1 WHERE member_id=? AND uniqueness_id=?');
-    $retweet_add->execute(array(
-        $member_id,
-        $uniqueness_id
-    ));
+        $retweet_add->execute(array(
+            $member_id,
+            $uniqueness_id
+        ));
 }
 
 //retweet取り消し
-if (isset($_SESSION['id']) && $_REQUEST['retweet'] == 1) {
+if (isset($_SESSION['id']) && intval($_REQUEST['retweet']) === 1) {
     $member_id = $_SESSION['id'];
     $post_id = $_REQUEST['id'];
     $uniqueness_id = $_REQUEST['uniqueness_id'];

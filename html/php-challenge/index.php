@@ -14,6 +14,28 @@ if (isset($_SESSION['id']) && $_SESSION['time'] + 3600 > time()) {
 	header('Location: login.php'); exit();
 }
 
+// もし新規登録されたユーザーがきた場合はposts_optionテーブルに必要なデータを挿入する
+$investigation = $db->prepare('SELECT * FROM posts_option WHERE member_id=?');
+$investigation->bindParam(1,$_SESSION['id'] , PDO::PARAM_INT);
+$investigation->execute();
+foreach ($investigation as $row) {
+	$exist[] = $row;
+}
+
+//新規登録と判断しposts_optionテーブルに必要データを挿入
+if(is_null($exist)) {
+$getId = $db->prepare('SELECT DISTINCT post_id, uniqueness_id FROM posts_option');
+$getId->execute();
+	foreach ($getId as $row) {
+		$toOption = $db->prepare('INSERT INTO posts_option SET member_id=?, post_id=?, uniqueness_id=?, created=NOW()');
+		$toOption->execute(array(
+			$_SESSION['id'],
+			$row['post_id'],
+			$row['uniqueness_id']
+		));
+	}
+}
+
 // 投稿を取得する
 $page = $_REQUEST['page'];
 if ($page == '') {
@@ -53,7 +75,6 @@ if (!empty($_POST)) {
 			$member['id'],
 			$_POST['message'],
 			$_POST['reply_post_id']
-		
 		));
 
 		//最新のposts_id取得
@@ -79,7 +100,8 @@ if (!empty($_POST)) {
 		$postOption = $db->prepare('INSERT INTO posts_option SET member_id=?, post_id=?, uniqueness_id=?, created=NOW()');
 			$postOption->execute(array(
 				$nums[$i]
-				,$max,$max
+				,$max
+				,$max
 			));
 		}
 		header('Location: index.php'); exit();
@@ -139,7 +161,7 @@ foreach ($posts as $post):
 
 	<!-- お気に入り機能 -->
 	<!-- お気に入り済み -->
-	<?php if($post['favorite'] == 1) :?>
+	<?php if(intval($post['favorite']) === 1) :?>
 	<a href="favorite.php?id=<?php echo h($post['id']); ?>
 	<?php echo '&uniqueness_id=' ?>
 	<?php echo h($post['uniqueness_id']); ?>
@@ -164,7 +186,7 @@ foreach ($posts as $post):
 
 	<!-- リツイート機能 -->
 	<!-- リツイート済み -->
-	<?php if($post['retweet'] == 1) :?>
+	<?php if(intval($post['retweet']) === 1) :?>
 	<a href="retweet.php?id=<?php echo h($post['id']); ?>
 	<?php echo '&uniqueness_id=' ?>
 	<?php echo h($post['uniqueness_id']); ?>
@@ -189,7 +211,7 @@ foreach ($posts as $post):
 	<!-- リツイート回数 -->
 	<?php echo h($post['rt']); ?>
 
-		<?php
+<?php
 if ($post['reply_post_id'] > 0):
 ?>
 <a href="view.php?id=<?php echo
