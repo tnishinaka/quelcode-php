@@ -10,7 +10,7 @@ if (isset($_SESSION['id'])) {
 	$messages->execute(array($id));
 	$message = $messages->fetch();
 
-	if ($message['member_id'] == $_SESSION['id']) {
+	if ($message['member_id'] === $_SESSION['id']) {
 		// 削除する
 		$del = $db->prepare('DELETE FROM posts WHERE id=?');
 		$del->execute(array($id));
@@ -19,7 +19,7 @@ if (isset($_SESSION['id'])) {
 		$del->execute(array($id));
 
 		// お気に入りリツイートがあった場合は論理削除
-		if($_REQUEST['favorite'] == 1 )
+		if(intval($_REQUEST['favorite']) === 1)
 		{
 			$member_id = $_SESSION['id'];
 			$uniqueness_id = $_REQUEST['uniqueness_id'];
@@ -30,7 +30,7 @@ if (isset($_SESSION['id'])) {
 					$uniqueness_id
 				));	
 		}
-		if($_REQUEST['retweet'] == 1)
+		if(intval($_REQUEST['retweet']) === 1)
 		{
 			$member_id = $_SESSION['id'];
 			$uniqueness_id = $_REQUEST['uniqueness_id'];

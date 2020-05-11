@@ -7,7 +7,7 @@ if (isset($_SESSION['id']) && intval($_REQUEST['retweet']) === 0) {
     $member_id = $_SESSION['id'];
     $uniqueness_id = $_REQUEST['uniqueness_id'];
     $messages =  $_REQUEST['message'];
-    if(mb_substr($messages,0,2) == 'RT')
+    if(mb_substr($messages,0,2) === 'RT')
     {
         $message = $messages;
     }
